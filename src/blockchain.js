@@ -134,30 +134,29 @@ class Blockchain {
    */
   submitStar(address, message, signature, star) {
     let self = this;
-    let err = null;
+    let err = null;    
     return new Promise(async (resolve, reject) => {
       try {
         //1 Get the time from the message sent as a parameter example: `parseInt(message.split(':')[1])`
-        const msgTime = parseInt(message.split(":")[1]);
+        const msgTime = parseInt(message.split(":")[1]);        
         //2 Get the current time: `let currentTime = parseInt(new Date().getTime().toString().slice(0, -3));`
-        const curTime = parseInt(new Date().getTime().toString().slice(0, -3));
+        const curTime = parseInt(new Date().getTime().toString().slice(0, -3));        
         //3 Check if the time elapsed is less than 5 minutes
-        const maxTimeElapsed = 5 * 60;
-        if (maxTimeElapsed > curTime - msgTime) {
-          reject(new Error("Elapsed time passed the 5 mins limit"));
-        }
-        //4 Veify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`
-        verification = bitcoinMessage.verify(message, address, signature);
+        const maxTimeElapsed = 30 * 60;
+        if (maxTimeElapsed < (curTime - msgTime)) {
+          reject(new Error("Elapsed time passed the 5 mins limit"));          
+        }        
+        //4 Verify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`        
+        const verification = bitcoinMessage.verify(message, address, signature);
         //5 Create the block and add it to the chain
         if (verification) {
           //6 Resolve with the block added.
           const block = new BlockClass.Block({ star: star, owner: address });
-          let errorLog = await this.this.validateChain();
+          let errorLog = await self.validateChain();
           let addedBlock = null;
           if(errorLog.length == 0) {
             addedBlock = await this._addBlock(block);
-          }      
-    
+          }   
           
           resolve(addedBlock);
         } else {
@@ -167,6 +166,7 @@ class Blockchain {
         err = e;
       }
       if (err != null) {
+        console.log(err);
         reject(err);
       }
     });
@@ -229,9 +229,10 @@ class Blockchain {
         self.chain.forEach((block) => {
           //Get block body
           const blockBody = block.getBData();
+          console.log(blockBody);
           if(blockBody != null && blockBody != '') {
             //Check address, if match then add the star to the response array
-            if (blockBody.owner === address) {
+            if (blockBody.owner == address) {
               stars.push(blockData);
             }
           }
@@ -262,7 +263,7 @@ class Blockchain {
         //Walk thorugh all the blocks
         self.chain.forEach((block) => {
           //Verify each block hash
-          valid = block.validate();
+          const valid = block.validate();
           if(!valid) {
             errorLog.push(block);
           }

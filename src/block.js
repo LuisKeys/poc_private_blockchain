@@ -42,7 +42,7 @@ class Block {
             let self = this;
             try {
                 // Save in auxiliary variable the current block hash
-                curHash = self.hash;                     
+                const curHash = self.hash;                     
                 // Recalculate the hash of the Block
                 let calcHash = SHA256(JSON.stringify(self)).toString();
                 // Comparing if the hashes changed
@@ -77,11 +77,11 @@ class Block {
             let self = this;
             try {
                 // Getting the encoded data saved in the Block
-                encBody = self.body;
+                const encBody = self.body;
                 // Decoding the data to retrieve the JSON representation of the object
-                jsonStr = hex2ascii(encBody);        
+                const jsonStr = hex2ascii(encBody);        
                 // Parse the data to an object to be retrieve.
-                bodyObj = JSON.parse(jsonStr)        
+                const bodyObj = JSON.parse(jsonStr)        
                 // Resolve with the data if the object isn't the Genesis block
                 if(this.height > 0) {
                     resolve(bodyObj);
