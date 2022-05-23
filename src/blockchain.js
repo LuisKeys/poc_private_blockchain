@@ -35,8 +35,11 @@ class Blockchain {
    */
   async initializeChain() {
     if (this.height === -1) {
-      let block = new BlockClass.Block({ data: "Genesis Block" });
-      await this._addBlock(block);
+      let block = new BlockClass.Block({ data: "Genesis Block" });      
+      let errorLog = await this.validateChain();
+      if(errorLog.length == 0) {
+        await this._addBlock(block);
+      }      
     }
   }
 
@@ -149,7 +152,13 @@ class Blockchain {
         if (verification) {
           //6 Resolve with the block added.
           const block = new BlockClass.Block({ star: star, owner: address });
-          const addedBlock = await this._addBlock(block);
+          let errorLog = await this.this.validateChain();
+          let addedBlock = null;
+          if(errorLog.length == 0) {
+            addedBlock = await this._addBlock(block);
+          }      
+    
+          
           resolve(addedBlock);
         } else {
           reject(new Error("Wallet address and signature verification failed"));
@@ -210,11 +219,33 @@ class Blockchain {
    */
   getStarsByWalletAddress(address) {
     let self = this;
+    let err = null;
     let stars = [];
+
     return new Promise((resolve, reject) => {
       
-    });
-  }
+      try {
+        //Walk thorugh all the blocks
+        self.chain.forEach((block) => {
+          //Get block body
+          const blockBody = block.getBData();
+          if(blockBody != null && blockBody != '') {
+            //Check address, if match then add the star to the response array
+            if (blockBody.owner === address) {
+              stars.push(blockData);
+            }
+          }
+        });
+        resolve(stars);
+    }
+    catch(e) {
+      err = e;
+    }
+    if (err != null) {
+      reject(err);
+    }
+  });
+}
 
   /**
    * This method will return a Promise that will resolve with the list of errors when validating the chain.
@@ -224,8 +255,32 @@ class Blockchain {
    */
   validateChain() {
     let self = this;
+    let err = null;
     let errorLog = [];
-    return new Promise(async (resolve, reject) => {});
+    return new Promise(async (resolve, reject) => {
+      try {
+        //Walk thorugh all the blocks
+        self.chain.forEach((block) => {
+          //Verify each block hash
+          valid = block.validate();
+          if(!valid) {
+            errorLog.push(block);
+          }
+          //Skip genesis block and validate with the previous hash with the previous block
+          if(block.height > 0) {
+            prevBlock = this.getBlockByHeight(block.height-1);
+            if(prevBlock.hash != block.hash) {
+              errorLog.push(block);
+            }
+          }
+        });
+      }catch(e) {
+        err = e;
+      }
+      if(err != null) {
+        reject(err);
+      }
+    });
   }
 }
 
