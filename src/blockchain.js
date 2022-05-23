@@ -33,13 +33,13 @@ class Blockchain {
    * You should use the `addBlock(block)` to create the Genesis Block
    * Passing as a data `{data: 'Genesis Block'}`
    */
-  async initializeChain() {       
-    if (this.height === -1) {       
-      let block = new BlockClass.Block({ data: "Genesis Block" });      
-      let errorLog = await this.validateChain();            
-      if(errorLog.length == 0) {
+  async initializeChain() {
+    if (this.height === -1) {
+      let block = new BlockClass.Block({ data: "Genesis Block" });
+      let errorLog = await this.validateChain();
+      if (errorLog.length == 0) {
         await this._addBlock(block);
-      }      
+      }
     }
   }
 
@@ -134,19 +134,19 @@ class Blockchain {
    */
   submitStar(address, message, signature, star) {
     let self = this;
-    let err = null;    
+    let err = null;
     return new Promise(async (resolve, reject) => {
       try {
         //1 Get the time from the message sent as a parameter example: `parseInt(message.split(':')[1])`
-        const msgTime = parseInt(message.split(":")[1]);        
+        const msgTime = parseInt(message.split(":")[1]);
         //2 Get the current time: `let currentTime = parseInt(new Date().getTime().toString().slice(0, -3));`
-        const curTime = parseInt(new Date().getTime().toString().slice(0, -3));        
+        const curTime = parseInt(new Date().getTime().toString().slice(0, -3));
         //3 Check if the time elapsed is less than 5 minutes
-        const maxTimeElapsed = 30 * 60;
-        if (maxTimeElapsed < (curTime - msgTime)) {
-          reject(new Error("Elapsed time passed the 5 mins limit"));          
-        }        
-        //4 Verify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`        
+        const maxTimeElapsed = 5 * 60;
+        if (maxTimeElapsed < curTime - msgTime) {
+          reject(new Error("Elapsed time passed the 5 mins limit"));
+        }
+        //4 Verify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`
         const verification = bitcoinMessage.verify(message, address, signature);
         //5 Create the block and add it to the chain
         if (verification) {
@@ -154,10 +154,10 @@ class Blockchain {
           const block = new BlockClass.Block({ star: star, owner: address });
           let errorLog = await self.validateChain();
           let addedBlock = null;
-          if(errorLog.length == 0) {
+          if (errorLog.length == 0) {
             addedBlock = await this._addBlock(block);
-          }   
-          
+          }
+
           resolve(addedBlock);
         } else {
           reject(new Error("Wallet address and signature verification failed"));
@@ -182,14 +182,16 @@ class Blockchain {
     let self = this;
     return new Promise((resolve, reject) => {
       //Check if the hash is valid and if the chain has at least the genesis block
-      if(self.chain.length == 0 || hash == null) { resolve(null); }
+      if (self.chain.length == 0 || hash == null) {
+        resolve(null);
+      }
       //Search for the hash
-      const block = self.chain.find(a => a.hash === hash);
+      const block = self.chain.find((a) => a.hash === hash);
       //if a block was found resolve with it otherwise return null
       if (block) {
-          resolve(block);
+        resolve(block);
       } else {
-          resolve(null);
+        resolve(null);
       }
     });
   }
@@ -217,36 +219,31 @@ class Blockchain {
    * Remember the star should be returned decoded.
    * @param {*} address
    */
-  getStarsByWalletAddress(address) {
+  async getStarsByWalletAddress(address) {
     let self = this;
     let err = null;
     let stars = [];
 
-    return new Promise((resolve, reject) => {
-      
+    return new Promise(async (resolve, reject) => {
       try {
         //Walk thorugh all the blocks
-        self.chain.forEach((block) => {
-          //Get block body
-          const blockBody = block.getBData();
-          console.log(blockBody);
-          if(blockBody != null && blockBody != '') {
-            //Check address, if match then add the star to the response array
-            if (blockBody.owner == address) {
+        for (const block of self.chain) {
+          const blockData = await block.getBData();
+          if (blockData != null) {
+            if (blockData.owner == address) {
               stars.push(blockData);
             }
           }
-        });
+        }
         resolve(stars);
-    }
-    catch(e) {
-      err = e;
-    }
-    if (err != null) {
-      reject(err);
-    }
-  });
-}
+      } catch (e) {
+        err = e;
+      }
+      if (err != null) {
+        reject(err);
+      }
+    });
+  }
 
   /**
    * This method will return a Promise that will resolve with the list of errors when validating the chain.
@@ -264,22 +261,22 @@ class Blockchain {
         self.chain.forEach((block) => {
           //Verify each block hash
           const valid = block.validate();
-          if(!valid) {
+          if (!valid) {
             errorLog.push(block);
           }
           //Skip genesis block and validate with the previous hash with the previous block
-          if(block.height > 0) {
-            prevBlock = this.getBlockByHeight(block.height-1);
-            if(prevBlock.hash != block.hash) {
+          if (block.height > 0) {
+            prevBlock = this.getBlockByHeight(block.height - 1);
+            if (prevBlock.hash != block.hash) {
               errorLog.push(block);
             }
           }
         });
         resolve(errorLog);
-      }catch(e) {
+      } catch (e) {
         err = e;
       }
-      if(err != null) {
+      if (err != null) {
         reject(err);
       }
     });
