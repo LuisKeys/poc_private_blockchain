@@ -11,6 +11,7 @@
 const SHA256 = require('crypto-js/sha256');
 const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
+const Block = require('bitcoinjs-lib/src/block');
 
 class Blockchain {
   /**
@@ -83,7 +84,9 @@ class Blockchain {
       } catch (e) {
         err = e;
       }
-      reject(err);
+      if (err != null) {
+        reject(err);
+      }
     });
   }
 
@@ -96,7 +99,17 @@ class Blockchain {
    * @param {*} address
    */
   requestMessageOwnershipVerification(address) {
-    return new Promise((resolve) => {});
+    return new Promise((resolve) => {
+      //Create a message with the following pieces:
+      //1 Wallet Address
+      //2 UTC time stamp (date time)
+      //3 starRegistry constant
+      let message = `${address}:${new Date()
+        .getTime()
+        .toString()
+        .slice(0, -3)}:starRegistry`;
+      resolve(message);
+    });
   }
 
   /**
@@ -118,7 +131,36 @@ class Blockchain {
    */
   submitStar(address, message, signature, star) {
     let self = this;
-    return new Promise(async (resolve, reject) => {});
+    let err = null;
+    return new Promise(async (resolve, reject) => {
+      try {
+        //1 Get the time from the message sent as a parameter example: `parseInt(message.split(':')[1])`
+        const msgTime = parseInt(message.split(":")[1]);
+        //2 Get the current time: `let currentTime = parseInt(new Date().getTime().toString().slice(0, -3));`
+        const curTime = parseInt(new Date().getTime().toString().slice(0, -3));
+        //3 Check if the time elapsed is less than 5 minutes
+        const maxTimeElapsed = 5 * 60;
+        if (maxTimeElapsed > curTime - msgTime) {
+          reject(new Error("Elapsed time passed the 5 mins limit"));
+        }
+        //4 Veify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`
+        verification = bitcoinMessage.verify(message, address, signature);
+        //5 Create the block and add it to the chain
+        if (verification) {
+          //6 Resolve with the block added.
+          const block = new BlockClass.Block({ star: star, owner: address });
+          const addedBlock = await this._addBlock(block);
+          resolve(addedBlock);
+        } else {
+          reject(new Error("Wallet address and signature verification failed"));
+        }
+      } catch (e) {
+        err = e;
+      }
+      if (err != null) {
+        reject(err);
+      }
+    });
   }
 
   /**
@@ -129,7 +171,18 @@ class Blockchain {
    */
   getBlockByHash(hash) {
     let self = this;
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      //Check if the hash is valid and if the chain has at least the genesis block
+      if(self.chain.length == 0 || hash == null) { resolve(null); }
+      //Search for the hash
+      const block = self.chain.find(a => a.hash === hash);
+      //if a block was found resolve with it otherwise return null
+      if (block) {
+          resolve(block);
+      } else {
+          resolve(null);
+      }
+    });
   }
 
   /**
@@ -158,7 +211,9 @@ class Blockchain {
   getStarsByWalletAddress(address) {
     let self = this;
     let stars = [];
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      
+    });
   }
 
   /**
