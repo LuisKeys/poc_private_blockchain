@@ -266,7 +266,7 @@ class Blockchain {
           }
           //Skip genesis block and validate with the previous hash with the previous block
           if (block.height > 0) {
-            prevBlock = this.getBlockByHeight(block.height - 1);
+            let prevBlock = this.getBlockByHeight(block.height - 1);
             if (prevBlock.hash != block.hash) {
               errorLog.push(block);
             }
