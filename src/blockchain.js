@@ -258,16 +258,16 @@ class Blockchain {
     return new Promise(async (resolve, reject) => {
       try {
         //Walk thorugh all the blocks
-        self.chain.forEach((block) => {
+        self.chain.forEach(async (block) => {
           //Verify each block hash
-          const valid = block.validate();
+          const valid = await block.validate();
           if (!valid) {
             errorLog.push(block);
           }
           //Skip genesis block and validate with the previous hash with the previous block
           if (block.height > 0) {
             let prevBlock = this.getBlockByHeight(block.height - 1);
-            if (prevBlock.hash != block.hash) {
+            if (prevBlock.hash != block.previousBlockHash) {
               errorLog.push(block);
             }
           }

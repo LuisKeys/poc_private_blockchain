@@ -44,7 +44,7 @@ class Block {
         let clonedBlock = { ...self, hash: null };
         //Recalculate the hash
         let calcHash = SHA256(JSON.stringify(clonedBlock)).toString();
-        //Compare hashes and resolve
+        //Compare hashes and resolve        
         resolve(self.hash === calcHash);
       } catch (e) {
         err = e;
